@@ -48,7 +48,7 @@ namespace Client_Management_System.Services
             con.Open();
 
             string query = @"INSERT INTO persons 
-                    (firstname, lastname, email, phone, dateofbirth)
+                    (firstname, lastname, email, phonenumber, dateofbirth)
                     VALUES(@fn, @ln, @em, @ph, @dob)";
 
             using SqlCommand cmd = new SqlCommand(query, con);
@@ -81,7 +81,7 @@ namespace Client_Management_System.Services
                     FirstName = Convert.ToString(reader["firstname"]) ?? "",
                     LastName = Convert.ToString(reader["lastname"]) ?? "",
                     Email = Convert.ToString(reader["email"]) ?? "",
-                    Phone = Convert.ToString(reader["phone"]) ?? "",
+                    Phone = Convert.ToString(reader["phonenumber"]) ?? "",
                     Dob = reader["dateofbirth"] == DBNull.Value
                         ? DateTime.MinValue
                         : Convert.ToDateTime(reader["dateofbirth"])
@@ -95,7 +95,7 @@ namespace Client_Management_System.Services
             using SqlConnection con = new SqlConnection(_connection);
             con.Open();
 
-            string query = @"UPDATE persons SET firstname=@fn, lastname=@ln, email=@em, phone=@ph, dateofbirth=@dob WHERE id=@id";
+            string query = @"UPDATE persons SET firstname=@fn, lastname=@ln, email=@em, phonenumber=@ph, dateofbirth=@dob WHERE id=@id";
 
 
             using SqlCommand cmd = new SqlCommand(query, con);
