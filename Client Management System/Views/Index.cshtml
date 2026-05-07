@@ -1,0 +1,43 @@
+﻿@model List<Client_Management_System.Models.Persons>
+
+<h2>Persons</h2>
+
+<a href="/Person/Create">Add Person</a>
+
+@if (Model == null || !Model.Any())
+{
+    <p>No records found.</p>
+}
+else
+{
+    <table class="table">
+        <tr>
+            <th>First Name</th>
+            <th>Last Name</th>
+            <th>Email</th>
+            <th>Phone</th>
+            <th>DOB</th>
+            <th>Actions</th>
+        </tr>
+
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.FirstName</td>
+                <td>@item.LastName</td>
+                <td>@item.Email</td>
+                <td>@item.Phone</td>
+                <td>
+                    @(item.Dob == DateTime.MinValue
+                                ? ""
+                                : item.Dob.ToString("yyyy-MM-dd"))
+        </td>
+
+                <td>
+                    <a href="/Person/Edit/@item.Id">Edit</a> |
+                    <a href="/Person/Delete/@item.Id">Delete</a>
+                </td>
+            </tr>
+        }
+    </table>
+}
