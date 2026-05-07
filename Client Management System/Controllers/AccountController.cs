@@ -33,10 +33,7 @@ namespace Client_Management_System.Controllers
             HttpContext.Session.SetString("Role", result.role);
             HttpContext.Session.SetString("UserId", result.userId.ToString());
 
-            if (result.role == "Admin")
-                return RedirectToAction("Index", "Admin");
-
-            return RedirectToAction("Index", "User");
+            return RedirectToAction("Index", "Person");
         }
 
         public IActionResult Logout()
