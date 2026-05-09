@@ -1,11 +1,14 @@
 ﻿using Client_Management_System.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 
 namespace Client_Management_System.Controllers
 {
+    [AllowAnonymous]
+    [Route("")]
     public class AccountController : Controller
     {
         private readonly AuthService _authService;
@@ -15,13 +18,17 @@ namespace Client_Management_System.Controllers
             _authService = authService;
         }
 
-        [HttpGet]
+        [HttpGet("login")]
         public IActionResult Login()
         {
+            if (User.Identity?.IsAuthenticated == true)
+                return Redirect("/admin/index");
+
             return View();
         }
 
-        [HttpPost]
+        [HttpPost("login")]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Login(string username, string password)
         {
             var result = _authService.Login(username, password);
@@ -52,23 +59,24 @@ namespace Client_Management_System.Controllers
             );
 
             if (result.role == "Admin")
-            {
-                return RedirectToAction("Index", "Admin");
-            }
+                return Redirect("/admin/index");
 
             if (result.role == "User")
-            {
-                return RedirectToAction("Index", "User");
-            }
+                return Redirect("/user/index");
 
-            return RedirectToAction("Login");
+            return Redirect("/login");
         }
 
-        [HttpGet]
+        [HttpGet("logout")]
         public async Task<IActionResult> Logout()
         {
-            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-            return RedirectToAction(nameof(Login));
+            await HttpContext.SignOutAsync(
+                CookieAuthenticationDefaults.AuthenticationScheme
+            );
+
+            HttpContext.Session.Clear();
+
+            return Redirect("/login");
         }
     }
 }

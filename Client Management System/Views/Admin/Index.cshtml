@@ -1,34 +1,75 @@
-﻿<div class="container mt-4">
+﻿<div class="container-fluid mt-4">
 
-    <div class="card shadow-sm mb-4">
-        <div class="card-body">
-            <h2 class="mb-0">Admin Dashboard </h2>
-            <p class="text-muted mb-0">Welcome back, Admin</p>
+    <div class="card border-0 shadow-sm mb-4 rounded-4">
+        <div class="card-body p-4">
+            <h3 class="fw-bold mb-1">Admin Dashboard</h3>
+            <p class="text-muted mb-0">
+                Welcome to your workspace — manage your activities below
+            </p>
         </div>
     </div>
 
-    <div class="row">
+    <div class="row g-4">
 
-        <div class="col-md-6 mb-3">
-            <div class="card shadow-sm h-100 text-center p-4">
-                <h5>Manage Persons</h5>
-                <p class="text-muted">View, add, edit and delete clients</p>
-                <a href="/Person/Index" class="btn btn-primary">
-                    Open Module
-                </a>
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm rounded-4 h-100 hover-shadow">
+
+                <div class="card-body text-center p-4">
+
+                    <i class="bi bi-people fs-1 text-primary"></i>
+
+                    <h5 class="mt-3 fw-semibold">Manage Persons</h5>
+
+                    <p class="text-muted">
+                        Add,Read,Update and Delete Users efficiently
+                    </p>
+
+                    <a asp-controller="Person"
+                       asp-action="Index"
+                       class="btn btn-primary rounded-pill px-4">
+                        Open Module
+                    </a>
+
+                </div>
+
             </div>
         </div>
 
-        <div class="col-md-6 mb-3">
-            <div class="card shadow-sm h-100 text-center p-4">
-                <h5>Logout</h5>
-                <p class="text-muted">Sign out securely</p>
-                <a href="/Account/Logout" class="btn btn-danger">
-                    Logout
-                </a>
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm rounded-4 h-100 hover-shadow">
+
+                <div class="card-body text-center p-4">
+
+                    <i class="bi bi-box-arrow-right fs-1 text-danger"></i>
+
+                    <h5 class="mt-3 fw-semibold">Logout</h5>
+
+                    <p class="text-muted">
+                        Securely sign out of your session
+                    </p>
+
+                    <a asp-controller="Account"
+                       asp-action="Logout"
+                       class="btn btn-outline-danger rounded-pill px-4">
+                        Logout
+                    </a>
+
+                </div>
+
             </div>
         </div>
 
     </div>
 
 </div>
+
+<style>
+    .hover-shadow {
+        transition: 0.3s ease;
+    }
+
+        .hover-shadow:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+        }
+</style>

@@ -1,22 +1,61 @@
 ﻿@{
-    ViewData["Title"] = "Login";
+    ViewData["Title"] = "LOGIN";
 }
 
-<h2>Login</h2>
+<div class="d-flex justify-content-center align-items-center vh-100" style="background: #f4f6f9;">
 
-<form method="post">
-    <div class="mb-3">
-        <input type="text" name="username" class="form-control" placeholder="Username" />
+    <div class="card shadow-lg border-0 rounded-4" style="width: 420px;">
+
+        <div class="card-header bg-primary text-white text-center py-4 rounded-top-4">
+            <h4 class="mb-0 fw-bold">CLIENT MANAGEMENT SYSTEM</h4>
+            <small class="opacity-75">Log in to continue</small>
+        </div>
+
+        <div class="card-body p-4">
+
+            <h5 class="text-center mb-3">LOGIN</h5>
+
+            <form method="post" action="/login">
+                @Html.AntiForgeryToken()
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Username</label>
+                    <input type="text"
+                           name="username"
+                           class="form-control form-control-lg"
+                           placeholder="Enter username"
+                           required />
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Password</label>
+                    <input type="password"
+                           name="password"
+                           class="form-control form-control-lg"
+                           placeholder="Enter password"
+                           required />
+                </div>
+
+                <button type="submit"
+                        class="btn btn-primary w-100 btn-lg rounded-pill shadow-sm">
+                    Login
+                </button>
+
+            </form>
+
+            @if (ViewBag.Error != null)
+            {
+                <div class="alert alert-danger mt-3 text-center">
+                    @ViewBag.Error
+                </div>
+            }
+
+        </div>
+
+        <div class="card-footer text-center text-muted small py-3">
+            © @DateTime.Now.Year CMS System
+        </div>
+
     </div>
 
-    <div class="mb-3">
-        <input type="password" name="password" class="form-control" placeholder="Password" />
-    </div>
-
-    <button type="submit" class="btn btn-primary">Login</button>
-</form>
-
-@if (ViewBag.Error != null)
-{
-    <p style="color:red">@ViewBag.Error</p>
-}
+</div>

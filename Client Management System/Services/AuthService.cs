@@ -19,9 +19,10 @@ namespace Client_Management_System.Services
             using SqlConnection con = new SqlConnection(_connection);
             con.Open();
 
-            string query = @"SELECT Id, Username, PasswordHash, Role, FailedAttempts, IsLocked 
-                             FROM LoginUser 
-                             WHERE Username = @username";
+            string query = @"
+                SELECT Id, Username, PasswordHash, Role, FailedAttempts, IsLocked 
+                FROM LoginUser 
+                WHERE Username = @username";
 
             using SqlCommand cmd = new SqlCommand(query, con);
             cmd.Parameters.AddWithValue("@username", usernameInput);
@@ -45,7 +46,7 @@ namespace Client_Management_System.Services
             reader.Close();
 
             if (isLocked)
-                return (false, "Account is locked", "", 0);
+                return (false, "Account is locked due to multiple failed attempts", "", 0);
 
             bool isValid = BCrypt.Net.BCrypt.Verify(passwordInput, hashedPassword);
 
@@ -55,33 +56,36 @@ namespace Client_Management_System.Services
 
                 if (failedAttempts >= 3)
                 {
-                    string lockQuery = @"UPDATE LoginUser 
-                                         SET FailedAttempts = @fa, IsLocked = 1 
-                                         WHERE Id = @id";
+                    string lockQuery = @"
+                        UPDATE LoginUser 
+                        SET FailedAttempts = @fa, IsLocked = 1 
+                        WHERE Id = @id";
 
                     using SqlCommand lockCmd = new SqlCommand(lockQuery, con);
                     lockCmd.Parameters.AddWithValue("@fa", failedAttempts);
                     lockCmd.Parameters.AddWithValue("@id", userId);
                     lockCmd.ExecuteNonQuery();
 
-                    return (false, "Account locked due to 3 failed attempts", "", 0);
+                    return (false, "Account locked after 3 failed attempts", "", 0);
                 }
 
-                string failQuery = @"UPDATE LoginUser 
-                                     SET FailedAttempts = @fa 
-                                     WHERE Id = @id";
+                string failQuery = @"
+                    UPDATE LoginUser 
+                    SET FailedAttempts = @fa 
+                    WHERE Id = @id";
 
                 using SqlCommand failCmd = new SqlCommand(failQuery, con);
                 failCmd.Parameters.AddWithValue("@fa", failedAttempts);
                 failCmd.Parameters.AddWithValue("@id", userId);
                 failCmd.ExecuteNonQuery();
 
-                return (false, $"Invalid password ({failedAttempts}/3)", "", 0);
+                return (false, $"Invalid password ({failedAttempts}/3 attempts)", "", 0);
             }
 
-            string resetQuery = @"UPDATE LoginUser 
-                                  SET FailedAttempts = 0 
-                                  WHERE Id = @id";
+            string resetQuery = @"
+                UPDATE LoginUser 
+                SET FailedAttempts = 0, IsLocked = 0 
+                WHERE Id = @id";
 
             using SqlCommand resetCmd = new SqlCommand(resetQuery, con);
             resetCmd.Parameters.AddWithValue("@id", userId);
