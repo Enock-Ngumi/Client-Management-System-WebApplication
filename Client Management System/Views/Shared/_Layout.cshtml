@@ -1,4 +1,11 @@
-﻿<!DOCTYPE html>
+﻿@using System.Security.Claims
+
+@{
+    var role = User.FindFirst(ClaimTypes.Role)?.Value;
+    var userName = User.Identity?.Name;
+}
+
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
@@ -50,18 +57,26 @@
 <body>
 
     <div class="sidebar">
+
         <h4 class="text-center py-3 border-bottom">CMS</h4>
 
         <a asp-controller="Home" asp-action="Index">
             <i class="bi bi-speedometer2"></i> Dashboard
         </a>
 
-        @if (User?.Identity != null && User.Identity.IsAuthenticated)
+        @if (role == "Admin")
         {
             <a asp-controller="Person" asp-action="Index">
                 <i class="bi bi-people"></i> Persons
             </a>
 
+            <a asp-controller="User" asp-action="Index">
+                <i class="bi bi-person"></i> Users
+            </a>
+        }
+
+        @if (role != null)
+        {
             <a asp-controller="Account" asp-action="Logout">
                 <i class="bi bi-box-arrow-right"></i> Logout
             </a>
@@ -72,25 +87,37 @@
                 <i class="bi bi-box-arrow-in-right"></i> Login
             </a>
         }
+
     </div>
 
     <div class="main-content">
 
         <div class="topbar d-flex justify-content-between align-items-center shadow-sm">
+
             <h5 class="mb-0">Dashboard</h5>
 
             <div>
                 <i class="bi bi-person-circle"></i>
-                
-                @if (User?.Identity != null && User.Identity.IsAuthenticated)
+
+                @if (role == "Admin")
                 {
-                    <span>Admin</span>
+                    <span class="badge bg-danger">Admin</span>
+                }
+                else if (role == "User")
+                {
+                    <span class="badge bg-primary">User</span>
                 }
                 else
                 {
-                    <span>Guest</span>
+                    <span class="badge bg-secondary">Guest</span>
+                }
+
+                @if (!string.IsNullOrEmpty(userName))
+                {
+                    <span class="ms-2">@userName</span>
                 }
             </div>
+
         </div>
 
         <div class="container-fluid">

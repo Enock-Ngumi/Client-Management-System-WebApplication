@@ -39,7 +39,11 @@ namespace Client_Management_System.Controllers
                 new Claim("UserId", result.userId.ToString())
             };
 
-            var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+            var identity = new ClaimsIdentity(
+                claims,
+                CookieAuthenticationDefaults.AuthenticationScheme
+            );
+
             var principal = new ClaimsPrincipal(identity);
 
             await HttpContext.SignInAsync(
@@ -47,12 +51,17 @@ namespace Client_Management_System.Controllers
                 principal
             );
 
-            return result.role switch
+            if (result.role == "Admin")
             {
-                "Admin" => RedirectToAction("Index", "Admin"),
-                "User" => RedirectToAction("Index", "User"),
-                _ => RedirectToAction("Login", "Account")
-            };
+                return RedirectToAction("Index", "Admin");
+            }
+
+            if (result.role == "User")
+            {
+                return RedirectToAction("Index", "User");
+            }
+
+            return RedirectToAction("Login");
         }
 
         [HttpGet]
