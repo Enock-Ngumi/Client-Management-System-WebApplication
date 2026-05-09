@@ -1,43 +1,88 @@
 ﻿@model List<Client_Management_System.Models.Persons>
 
-<h2>Persons</h2>
+<div class="container py-4">
 
-<a href="/Person/Create">Add Person</a>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3 class="fw-bold">Persons Management</h3>
 
-@if (Model == null || !Model.Any())
-{
-    <p>No records found.</p>
-}
-else
-{
-    <table class="table">
-        <tr>
-            <th>First Name</th>
-            <th>Last Name</th>
-            <th>Email</th>
-            <th>Phone</th>
-            <th>DOB</th>
-            <th>Actions</th>
-        </tr>
+        <a class="btn btn-primary rounded-pill px-4"
+           asp-controller="Person"
+           asp-action="Create">
+            + Add Person
+        </a>
+    </div>
 
-        @foreach (var item in Model)
-        {
-            <tr>
-                <td>@item.FirstName</td>
-                <td>@item.LastName</td>
-                <td>@item.Email</td>
-                <td>@item.Phone</td>
-                <td>
-                    @(item.Dob == DateTime.MinValue
-                                ? ""
-                                : item.Dob.ToString("yyyy-MM-dd"))
-        </td>
+    @if (Model == null || !Model.Any())
+    {
+        <div class="alert alert-info">
+            No records found.
+        </div>
+    }
+    else
+    {
+        <div class="card border-0 shadow-sm rounded-4">
 
-                <td>
-                    <a href="/Person/Edit/@item.Id">Edit</a> |
-                    <a href="/Person/Delete/@item.Id">Delete</a>
-                </td>
-            </tr>
-        }
-    </table>
-}
+            <div class="card-body">
+
+                <div class="table-responsive">
+
+                    <table class="table table-hover align-middle">
+
+                        <thead class="table-dark">
+                            <tr>
+                                <th>First Name</th>
+                                <th>Last Name</th>
+                                <th>Email</th>
+                                <th>Phone</th>
+                                <th>DOB</th>
+                                <th class="text-center">Actions</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            @foreach (var item in Model)
+                            {
+                                <tr>
+                                    <td class="fw-semibold">@item.FirstName</td>
+                                    <td>@item.LastName</td>
+                                    <td>@item.Email</td>
+                                    <td>@item.PhoneNumber</td>
+
+                                    <td>
+                                        @if (item.Dob != DateTime.MinValue)
+                                        {
+                                            @item.Dob.ToString("yyyy-MM-dd")
+                                        }
+                                    </td>
+
+                                    <td class="text-center">
+
+                                        <a asp-controller="Person"
+                                           asp-action="Edit"
+                                           asp-route-id="@item.Id"
+                                           class="btn btn-sm btn-outline-warning rounded-pill px-3">
+                                            Edit
+                                        </a>
+
+                                        <a asp-controller="Person"
+                                           asp-action="Delete"
+                                           asp-route-id="@item.Id"
+                                           class="btn btn-sm btn-outline-danger rounded-pill px-3">
+                                            Delete
+                                        </a>
+
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+        </div>
+    }
+
+</div>

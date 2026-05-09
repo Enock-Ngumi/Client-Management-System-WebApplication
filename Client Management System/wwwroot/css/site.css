@@ -20,3 +20,23 @@ html {
 body {
   margin-bottom: 60px;
 }
+#wrapper {
+    display: flex;
+}
+
+#sidebar-wrapper {
+    width: 250px;
+    height: 100vh;
+}
+
+#page-content-wrapper {
+    flex: 1;
+}
+
+.list-group-item {
+    border: none;
+}
+
+    .list-group-item:hover {
+        background-color: #495057;
+    }

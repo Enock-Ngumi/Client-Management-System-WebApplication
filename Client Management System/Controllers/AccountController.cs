@@ -1,5 +1,8 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Client_Management_System.Services;
+﻿using Client_Management_System.Services;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace Client_Management_System.Controllers
 {
@@ -19,7 +22,7 @@ namespace Client_Management_System.Controllers
         }
 
         [HttpPost]
-        public IActionResult Login(string username, string password)
+        public async Task<IActionResult> Login(string username, string password)
         {
             var result = _authService.Login(username, password);
 
@@ -29,17 +32,34 @@ namespace Client_Management_System.Controllers
                 return View();
             }
 
-            HttpContext.Session.SetString("Username", username);
-            HttpContext.Session.SetString("Role", result.role);
-            HttpContext.Session.SetString("UserId", result.userId.ToString());
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.Name, username),
+                new Claim(ClaimTypes.Role, result.role),
+                new Claim("UserId", result.userId.ToString())
+            };
 
-            return RedirectToAction("Index", "Person");
+            var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+            var principal = new ClaimsPrincipal(identity);
+
+            await HttpContext.SignInAsync(
+                CookieAuthenticationDefaults.AuthenticationScheme,
+                principal
+            );
+
+            return result.role switch
+            {
+                "Admin" => RedirectToAction("Index", "Admin"),
+                "User" => RedirectToAction("Index", "User"),
+                _ => RedirectToAction("Login", "Account")
+            };
         }
 
-        public IActionResult Logout()
+        [HttpGet]
+        public async Task<IActionResult> Logout()
         {
-            HttpContext.Session.Clear();
-            return RedirectToAction("Login", "Account");
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            return RedirectToAction(nameof(Login));
         }
     }
 }
