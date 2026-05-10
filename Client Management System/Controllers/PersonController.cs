@@ -2,14 +2,11 @@
 using Client_Management_System.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System;
-using System.Linq;
-using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 
 namespace Client_Management_System.Controllers
 {
     [Authorize]
-    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
     [Route("persons")]
     public class PersonController : Controller
     {
@@ -21,7 +18,7 @@ namespace Client_Management_System.Controllers
         }
 
         [HttpGet("")]
-        public IActionResult Index(string search)
+        public async Task<IActionResult> Index(string search)
         {
             var data = _context.Persons
                 .Where(p => !p.IsDeleted)
@@ -36,9 +33,9 @@ namespace Client_Management_System.Controllers
                     p.PhoneNumber.Contains(search));
             }
 
-            var result = data
-                .OrderByDescending(p => p.CreatedDate ?? DateTime.MinValue)
-                .ToList();
+            var result = await data
+                .OrderByDescending(p => p.CreatedDate)
+                .ToListAsync();
 
             return View(result);
         }
@@ -56,10 +53,13 @@ namespace Client_Management_System.Controllers
             if (!ModelState.IsValid)
                 return View(p);
 
-            p.CreatedDate = DateTime.Now;
-            p.UserId = int.TryParse(User.FindFirst("UserId")?.Value, out int userId) ? userId : 0;
+            FormatPerson(p);
+
             p.CreatedBy = User.Identity?.Name ?? "Admin";
-            p.IsDeleted = false;
+            p.UserId = int.TryParse(User.FindFirst("UserId")?.Value, out var uid) ? uid : null;
+            p.CreatedDate = DateTime.Now;
+
+            p.NormalizePhone();
 
             _context.Persons.Add(p);
             await _context.SaveChangesAsync();
@@ -68,11 +68,13 @@ namespace Client_Management_System.Controllers
         }
 
         [HttpGet("edit/{id}")]
-        public IActionResult Edit(int id)
+        public async Task<IActionResult> Edit(int id)
         {
-            var person = _context.Persons.Find(id);
+            var person = await _context.Persons
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(x => x.Id == id);
 
-            if (person == null || person.IsDeleted)
+            if (person == null)
                 return NotFound();
 
             return View(person);
@@ -80,58 +82,124 @@ namespace Client_Management_System.Controllers
 
         [HttpPost("edit/{id}")]
         [ValidateAntiForgeryToken]
-        public IActionResult Edit(Persons p)
+        public async Task<IActionResult> Edit(int id, Persons p)
         {
             if (!ModelState.IsValid)
                 return View(p);
 
-            var existing = _context.Persons.Find(p.Id);
+            var existing = await _context.Persons
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(x => x.Id == id);
 
-            if (existing == null || existing.IsDeleted)
+            if (existing == null)
                 return NotFound();
 
-            p.UserId = existing.UserId;
-            p.CreatedBy = existing.CreatedBy;
-            p.CreatedDate = existing.CreatedDate;
-            p.IsDeleted = existing.IsDeleted;
+            FormatPerson(p);
 
-            _context.Entry(existing).CurrentValues.SetValues(p);
-            _context.SaveChanges();
+            existing.FirstName = p.FirstName;
+            existing.LastName = p.LastName;
+            existing.Email = p.Email;
+            existing.PhoneNumber = p.PhoneNumber;
+            existing.Dob = p.Dob;
+
+            existing.NormalizePhone();
+
+            await _context.SaveChangesAsync();
 
             return RedirectToAction(nameof(Index));
         }
 
         [HttpPost("delete")]
         [ValidateAntiForgeryToken]
-        public IActionResult Delete(int id)
+        public async Task<IActionResult> Delete(int id)
         {
-            var person = _context.Persons.Find(id);
+            var person = await _context.Persons.FindAsync(id);
 
-            if (person != null && !person.IsDeleted)
-            {
-                person.IsDeleted = true;
-                _context.SaveChanges();
+            if (person == null)
+                return NotFound();
 
-                TempData["UndoId"] = id;
-                TempData["Success"] = "Person deleted successfully!";
-            }
+            person.IsDeleted = true;
 
-            return RedirectToAction(nameof(Index));
+            await _context.SaveChangesAsync();
+
+            return Ok();
         }
 
         [HttpPost("undodelete")]
         [ValidateAntiForgeryToken]
-        public IActionResult UndoDelete(int id)
+        public async Task<IActionResult> UndoDelete(int id)
         {
-            var person = _context.Persons.Find(id);
+            var person = await _context.Persons
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(p => p.Id == id);
 
-            if (person != null && person.IsDeleted)
+            if (person == null)
+                return NotFound();
+
+            person.IsDeleted = false;
+
+            await _context.SaveChangesAsync();
+
+            return Ok();
+        }
+
+        [HttpPost("bulkdelete")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> BulkDelete(List<int> ids)
+        {
+            if (ids == null || ids.Count == 0)
+                return BadRequest();
+
+            var persons = await _context.Persons
+                .Where(p => ids.Contains(p.Id))
+                .ToListAsync();
+
+            foreach (var person in persons)
             {
-                person.IsDeleted = false;
-                _context.SaveChanges();
+                person.IsDeleted = true;
             }
 
-            return RedirectToAction(nameof(Index));
+            await _context.SaveChangesAsync();
+
+            return Ok();
+        }
+
+        [HttpPost("bulkundo")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> BulkUndo(List<int> ids)
+        {
+            if (ids == null || ids.Count == 0)
+                return BadRequest();
+
+            var persons = await _context.Persons
+                .IgnoreQueryFilters()
+                .Where(p => ids.Contains(p.Id))
+                .ToListAsync();
+
+            foreach (var person in persons)
+            {
+                person.IsDeleted = false;
+            }
+
+            await _context.SaveChangesAsync();
+
+            return Ok();
+        }
+
+        private void FormatPerson(Persons p)
+        {
+            if (!string.IsNullOrWhiteSpace(p.FirstName))
+                p.FirstName = ToTitleCase(p.FirstName);
+
+            if (!string.IsNullOrWhiteSpace(p.LastName))
+                p.LastName = ToTitleCase(p.LastName);
+        }
+
+        private string ToTitleCase(string value)
+        {
+            return System.Globalization.CultureInfo.CurrentCulture
+                .TextInfo
+                .ToTitleCase(value.ToLower());
         }
     }
 }

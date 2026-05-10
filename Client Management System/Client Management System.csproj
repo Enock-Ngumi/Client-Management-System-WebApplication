@@ -10,6 +10,7 @@
 
 	<ItemGroup>
 		<PackageReference Include="BCrypt.Net-Next" Version="4.1.0" />
+		<PackageReference Include="editorconfig" Version="0.15.0" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.26" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.7">
 		  <PrivateAssets>all</PrivateAssets>

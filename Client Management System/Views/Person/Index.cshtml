@@ -1,99 +1,128 @@
 ﻿@model List<Client_Management_System.Models.Persons>
 
+@Html.AntiForgeryToken()
+
+<style>
+    .select-col {
+        width: 40px;
+        text-align: center;
+        display: none;
+    }
+
+    body.select-mode .select-col {
+        display: table-cell !important;
+    }
+
+    table.dataTable {
+        width: 100% !important;
+        table-layout: auto;
+    }
+</style>
+
 <div class="container-fluid">
 
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
 
-        <div>
-            <h3 class="mb-0 fw-bold">Persons Management</h3>
-            <small class="text-muted">Manage all registered persons</small>
+        <div class="d-flex align-items-center gap-3">
+
+            <h4 class="mb-0">Persons Management</h4>
+
+            <button id="toggleSelectMode" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-check2-square"></i> Select Mode
+            </button>
+
+            <div class="dropdown">
+                <button class="btn btn-light border dropdown-toggle" data-bs-toggle="dropdown">
+                    <i class="bi bi-three-dots-vertical"></i>
+                </button>
+
+                <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                    <li><a class="dropdown-item" href="#" id="exportExcel">Export Excel</a></li>
+                    <li><a class="dropdown-item" href="#" id="exportPdf">Export PDF</a></li>
+                    <li><a class="dropdown-item" href="#" id="printTable">Print</a></li>
+                </ul>
+            </div>
+
         </div>
 
         <a asp-controller="Person" asp-action="Create"
-           class="btn btn-primary btn-lg rounded-pill shadow-sm">
-            <i class="bi bi-plus-circle"></i> Add Person
+           class="btn btn-primary rounded-pill">
+            Add Person
         </a>
 
     </div>
 
+    <div id="bulkActionBar"
+         class="alert alert-danger d-none d-flex justify-content-between align-items-center mb-3">
+
+        <span>
+            <strong id="selectedCount">0</strong> item(s) selected
+        </span>
+
+        <button id="bulkDelete" class="btn btn-light btn-sm">
+            Delete Selected
+        </button>
+
+    </div>
+
     <div class="card border-0 shadow-lg rounded-4">
+        <div class="card-body">
 
-        <div class="card-body p-4">
+            <table id="personsTable" class="table table-hover align-middle">
 
-            <div class="table-responsive">
+                <thead class="table-dark">
+                    <tr>
+                        <th class="select-col">
+                            <input type="checkbox" id="selectAll" />
+                        </th>
 
-                <table id="personsTable" class="table table-hover align-middle">
+                        <th>First Name</th>
+                        <th>Last Name</th>
+                        <th>Email</th>
+                        <th>Phone</th>
+                        <th>DOB</th>
+                        <th>Created</th>
+                        <th class="no-export">Actions</th>
+                    </tr>
+                </thead>
 
-                    <thead class="table-dark">
+                <tbody>
+                    @foreach (var item in Model)
+                    {
                         <tr>
-                            <th>First Name</th>
-                            <th>Last Name</th>
-                            <th>Email</th>
-                            <th>Phone</th>
-                            <th>DOB</th>
-                            <th>Created Date</th>
-                            <th class="text-center">Actions</th>
+                            <td class="select-col">
+                                <input type="checkbox" class="row-check" value="@item.Id" />
+                            </td>
+
+                            <td>@item.FirstName</td>
+                            <td>@item.LastName</td>
+                            <td>@item.Email</td>
+                            <td>@item.PhoneNumber</td>
+                            <td>@(item.Dob?.ToString("dd MMM yyyy") ?? "-")</td>
+                            <td>@item.CreatedDate.ToString("dd MMM yyyy hh:mm tt")</td>
+
+                            <td>
+                                <a asp-action="Edit"
+                                   asp-route-id="@item.Id"
+                                   class="btn btn-sm btn-warning">Edit</a>
+
+                                <button class="btn btn-sm btn-danger delete-btn"
+                                        data-id="@item.Id">
+                                    Delete
+                                </button>
+                            </td>
                         </tr>
-                    </thead>
+                    }
+                </tbody>
 
-                    <tbody>
-
-                        @if (Model != null && Model.Any())
-                        {
-                            foreach (var item in Model)
-                            {
-                                <tr>
-
-                                    <td class="fw-semibold">@item.FirstName</td>
-                                    <td>@item.LastName</td>
-
-                                    <td class="text-primary">@item.Email</td>
-
-                                    <td>@item.PhoneNumber</td>
-
-                                    <td>
-                                        @(item.Dob?.ToString("dd MMM yyyy") ?? "-")
-                                    </td>
-
-                                    <td>
-                                        @(item.CreatedDate?.ToString("dd MMM yyyy hh:mm tt") ?? "-")
-                                    </td>
-
-                                    <td class="text-center">
-
-                                        <a asp-controller="Person"
-                                           asp-action="Edit"
-                                           asp-route-id="@item.Id"
-                                           class="btn btn-sm btn-outline-warning rounded-pill me-2">
-                                            Edit
-                                        </a>
-
-                                        <button type="button"
-                                                class="btn btn-sm btn-outline-danger rounded-pill delete-btn"
-                                                data-id="@item.Id">
-                                            Delete
-                                        </button>
-
-                                    </td>
-
-                                </tr>
-                            }
-                        }
-
-                    </tbody>
-
-                </table>
-
-            </div>
+            </table>
 
         </div>
     </div>
 
-    <form id="deleteForm" method="post"
-          asp-controller="Person"
-          asp-action="Delete">
+    <form id="deleteForm" method="post" asp-controller="Person" asp-action="Delete">
         @Html.AntiForgeryToken()
-        <input type="hidden" id="deleteId" name="id" />
+        <input type="hidden" name="id" id="deleteId" />
     </form>
 
 </div>
@@ -103,47 +132,280 @@
     <script>
         $(document).ready(function () {
 
-            $('#personsTable').DataTable({
+            let selectMode = false;
+            let lastDeletedId = null;
+            let lastDeletedIds = [];
+
+            var table = $('#personsTable').DataTable({
                 pageLength: 10,
-                lengthMenu: [10, 25, 50, 100],
                 responsive: true,
-                autoWidth: false,
-                ordering: true,
-                searching: true,
+                destroy: true,
                 dom: 'Bfrtip',
+
+                columnDefs: [
+                    { targets: "_all", className: "dt-left" }
+                ],
+
                 buttons: [
-                    { extend: 'excelHtml5', text: 'Excel', className: 'btn btn-success btn-sm' },
-                    { extend: 'pdfHtml5', text: 'PDF', className: 'btn btn-danger btn-sm' },
-                    { extend: 'print', text: 'Print', className: 'btn btn-primary btn-sm' },
-                    { extend: 'colvis', text: 'Columns', className: 'btn btn-secondary btn-sm' }
+
+                    {
+                        extend: 'excelHtml5',
+                        title: 'Persons List',
+                        text: 'Excel',
+                        exportOptions: {
+                            columns: ':not(.no-export):not(.select-col)',
+                            stripHtml: true
+                        }
+                    },
+
+                    {
+                        extend: 'pdfHtml5',
+                        title: 'Persons List',
+                        text: 'PDF',
+                        orientation: 'landscape',
+                        pageSize: 'A4',
+                        exportOptions: {
+                            columns: ':not(.no-export):not(.select-col)',
+                            stripHtml: true
+                        },
+                        customize: function (doc) {
+
+                            var colCount = doc.content[1].table.body[0].length;
+                            doc.content[1].table.widths = Array(colCount).fill('*');
+
+                            doc.styles.tableHeader.alignment = 'left';
+                            doc.styles.tableBodyEven.alignment = 'left';
+                            doc.styles.tableBodyOdd.alignment = 'left';
+
+                            doc.styles.tableHeader.fontSize = 8;
+                            doc.styles.tableBodyEven.fontSize = 8;
+                            doc.styles.tableBodyOdd.fontSize = 8;
+
+                            doc.content[1].layout = {
+                                hLineWidth: function () { return 0.5; },
+                                vLineWidth: function () { return 0.5; },
+                                hLineColor: function () { return '#aaa'; },
+                                vLineColor: function () { return '#aaa'; },
+                                paddingLeft: function () { return 8; },
+                                paddingRight: function () { return 8; },
+                                paddingTop: function () { return 4; },
+                                paddingBottom: function () { return 4; }
+                            };
+
+                            doc.defaultStyle = {
+                                fontSize: 10,
+                                alignment: 'left'
+                            };
+                        }
+                    },
+
+                    {
+                        extend: 'print',
+                        title: 'Persons List',
+                        text: 'Print',
+                        exportOptions: {
+                            columns: ':not(.no-export):not(.select-col)'
+                        },
+                        customize: function (win) {
+
+                            $(win.document.body).css('font-size', '12px');
+
+                            $(win.document.body).find('table')
+                                .addClass('compact')
+                                .css({
+                                    'width': '100%',
+                                    'border-collapse': 'collapse'
+                                });
+
+                            $(win.document.body).find('table th, table td')
+                                .css({
+                                    'border': '1px solid #ddd',
+                                    'padding': '8px',
+                                    'text-align': 'left'
+                                });
+
+                            $(win.document.body).find('h1')
+                                .css('text-align', 'center');
+                        }
+                    }
+
                 ]
             });
 
-        });
-    </script>
+            $('#exportExcel').click(e => {
+                e.preventDefault();
+                table.button(0).trigger();
+            });
 
-    <script>
-        $(document).ready(function () {
+            $('#exportPdf').click(e => {
+                e.preventDefault();
+                table.button(1).trigger();
+            });
 
-            $('.delete-btn').click(function () {
+            $('#printTable').click(e => {
+                e.preventDefault();
+                table.button(2).trigger();
+            });
 
-                var id = $(this).data('id');
+            $(document).on('click', '.delete-btn', function () {
+
+                let id = $(this).data('id');
+                let row = $(this).closest("tr");
 
                 Swal.fire({
-                    title: "Are you sure?",
-                    text: "This record will be moved to trash!",
+                    title: "Delete?",
+                    text: "This record will be removed",
                     icon: "warning",
                     showCancelButton: true,
                     confirmButtonColor: "#d33",
-                    cancelButtonColor: "#6c757d",
-                    confirmButtonText: "Yes, delete it!",
-                    cancelButtonText: "Cancel"
+                    confirmButtonText: "Yes delete"
                 }).then((result) => {
 
-                    if (result.isConfirmed) {
-                        $('#deleteId').val(id);
-                        $('#deleteForm').submit();
-                    }
+                    if (!result.isConfirmed) return;
+
+                    lastDeletedId = id;
+
+                    $.post("/persons/delete", {
+                        id: id,
+                        __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                    }).done(function () {
+
+                        table.row(row).remove().draw(false);
+
+                        Swal.fire({
+                            icon: "success",
+                            title: "Deleted",
+                            text: "Record removed",
+                            showCancelButton: true,
+                            confirmButtonText: "Undo"
+                        }).then((r) => {
+
+                            if (!r.isConfirmed) return;
+
+                            $.post("/persons/undodelete", {
+                                id: lastDeletedId,
+                                __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                            }).done(() => {
+                                Swal.fire("Restored!", "", "success")
+                                    .then(() => location.reload());
+                            });
+
+                        });
+
+                    });
+
+                });
+
+            });
+
+            $('#toggleSelectMode').click(function () {
+
+                selectMode = !selectMode;
+
+                $('body').toggleClass('select-mode', selectMode);
+
+                if (!selectMode) {
+                    $('.row-check').prop('checked', false);
+                    $('#selectAll').prop('checked', false);
+                    $('#bulkActionBar').addClass('d-none');
+                }
+
+                updateBulkBar();
+            });
+
+            $('#selectAll').on('click', function () {
+                let checked = this.checked;
+                table.$('.row-check').prop('checked', checked);
+                updateBulkBar();
+            });
+
+            $(document).on('change', '.row-check', updateBulkBar);
+
+            function getSelectedIds() {
+                let ids = [];
+                table.$('.row-check:checked').each(function () {
+                    ids.push($(this).val());
+                });
+                return ids;
+            }
+
+            function updateBulkBar() {
+
+                if (!selectMode) {
+                    $('#bulkActionBar').addClass('d-none');
+                    return;
+                }
+
+                let count = table.$('.row-check:checked').length;
+
+                if (count > 0) {
+                    $('#bulkActionBar').removeClass('d-none');
+                    $('#selectedCount').text(count);
+                } else {
+                    $('#bulkActionBar').addClass('d-none');
+                }
+            }
+
+            $('#bulkDelete').click(function () {
+
+                let ids = getSelectedIds();
+
+                if (ids.length === 0) {
+                    Swal.fire("Select records first");
+                    return;
+                }
+
+                Swal.fire({
+                    title: "Delete selected?",
+                    text: ids.length + " records will be deleted",
+                    icon: "warning",
+                    showCancelButton: true
+                }).then((result) => {
+
+                    if (!result.isConfirmed) return;
+
+                    lastDeletedIds = ids;
+
+                    $.ajax({
+                        type: "POST",
+                        url: "/persons/bulkdelete",
+                        data: {
+                            ids: ids,
+                            __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                        },
+                        traditional: true
+                    }).done(function () {
+
+                        table.rows(function (idx, data, node) {
+                            return $(node).find('.row-check:checked').length > 0;
+                        }).remove().draw(false);
+
+                        Swal.fire({
+                            icon: "success",
+                            title: "Deleted",
+                            text: "Records removed",
+                            showCancelButton: true,
+                            confirmButtonText: "Undo"
+                        }).then((r) => {
+
+                            if (!r.isConfirmed) return;
+
+                            $.ajax({
+                                type: "POST",
+                                url: "/persons/bulkundo",
+                                data: {
+                                    ids: lastDeletedIds,
+                                    __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                                },
+                                traditional: true
+                            }).done(() => {
+                                Swal.fire("Restored!", "", "success")
+                                    .then(() => location.reload());
+                            });
+
+                        });
+
+                    });
 
                 });
 
@@ -151,32 +413,5 @@
 
         });
     </script>
-
-    @if (TempData["Success"] != null && TempData["UndoId"] != null)
-    {
-        <script>
-            Swal.fire({
-                icon: 'success',
-                title: 'Deleted!',
-                text: '@TempData["Success"]',
-                showCancelButton: true,
-                confirmButtonText: 'Undo',
-                cancelButtonText: 'Close',
-                timer: 5000
-            }).then((result) => {
-
-                if (result.isConfirmed) {
-
-                    $.post('/Person/UndoDelete', { id: '@TempData["UndoId"]' })
-                        .done(function () {
-                            Swal.fire('Restored!', 'Person restored successfully.', 'success')
-                                .then(() => location.reload());
-                        });
-
-                }
-
-            });
-        </script>
-    }
 
 }
