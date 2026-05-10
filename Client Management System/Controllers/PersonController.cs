@@ -2,6 +2,9 @@
 using Client_Management_System.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Client_Management_System.Controllers
 {
@@ -20,9 +23,11 @@ namespace Client_Management_System.Controllers
         [HttpGet("")]
         public IActionResult Index(string search)
         {
-            var data = _context.Persons.AsQueryable();
+            var data = _context.Persons
+                .Where(p => !p.IsDeleted)
+                .AsQueryable();
 
-            if (!string.IsNullOrEmpty(search))
+            if (!string.IsNullOrWhiteSpace(search))
             {
                 data = data.Where(p =>
                     p.FirstName.Contains(search) ||
@@ -31,9 +36,11 @@ namespace Client_Management_System.Controllers
                     p.PhoneNumber.Contains(search));
             }
 
-            data = data.OrderByDescending(p => p.CreatedDate ?? DateTime.MinValue);
+            var result = data
+                .OrderByDescending(p => p.CreatedDate ?? DateTime.MinValue)
+                .ToList();
 
-            return View(data.ToList());
+            return View(result);
         }
 
         [HttpGet("create")]
@@ -52,6 +59,7 @@ namespace Client_Management_System.Controllers
             p.CreatedDate = DateTime.Now;
             p.UserId = int.TryParse(User.FindFirst("UserId")?.Value, out int userId) ? userId : 0;
             p.CreatedBy = User.Identity?.Name ?? "Admin";
+            p.IsDeleted = false;
 
             _context.Persons.Add(p);
             await _context.SaveChangesAsync();
@@ -64,7 +72,7 @@ namespace Client_Management_System.Controllers
         {
             var person = _context.Persons.Find(id);
 
-            if (person == null)
+            if (person == null || person.IsDeleted)
                 return NotFound();
 
             return View(person);
@@ -79,12 +87,13 @@ namespace Client_Management_System.Controllers
 
             var existing = _context.Persons.Find(p.Id);
 
-            if (existing == null)
+            if (existing == null || existing.IsDeleted)
                 return NotFound();
 
             p.UserId = existing.UserId;
             p.CreatedBy = existing.CreatedBy;
             p.CreatedDate = existing.CreatedDate;
+            p.IsDeleted = existing.IsDeleted;
 
             _context.Entry(existing).CurrentValues.SetValues(p);
             _context.SaveChanges();
@@ -92,28 +101,35 @@ namespace Client_Management_System.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        [HttpGet("delete/{id}")]
+        [HttpPost("delete")]
+        [ValidateAntiForgeryToken]
         public IActionResult Delete(int id)
         {
             var person = _context.Persons.Find(id);
 
-            if (person == null)
-                return NotFound();
+            if (person != null && !person.IsDeleted)
+            {
+                person.IsDeleted = true;
+                _context.SaveChanges();
 
-            return View(person);
+                TempData["UndoId"] = id;
+                TempData["Success"] = "Person deleted successfully!";
+            }
+
+            return RedirectToAction(nameof(Index));
         }
 
-        [HttpPost("delete/{id}")]
+        [HttpPost("undodelete")]
         [ValidateAntiForgeryToken]
-        public IActionResult DeleteConfirmed(int id)
+        public IActionResult UndoDelete(int id)
         {
             var person = _context.Persons.Find(id);
 
-            if (person == null)
-                return NotFound();
-
-            _context.Persons.Remove(person);
-            _context.SaveChanges();
+            if (person != null && person.IsDeleted)
+            {
+                person.IsDeleted = false;
+                _context.SaveChanges();
+            }
 
             return RedirectToAction(nameof(Index));
         }

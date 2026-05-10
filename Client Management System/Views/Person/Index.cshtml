@@ -47,9 +47,7 @@
                                     <td class="fw-semibold">@item.FirstName</td>
                                     <td>@item.LastName</td>
 
-                                    <td>
-                                        <span class="text-primary">@item.Email</span>
-                                    </td>
+                                    <td class="text-primary">@item.Email</td>
 
                                     <td>@item.PhoneNumber</td>
 
@@ -61,7 +59,7 @@
                                         @(item.CreatedDate?.ToString("dd MMM yyyy hh:mm tt") ?? "-")
                                     </td>
 
-                                    <td class="text-center align-middle">
+                                    <td class="text-center">
 
                                         <a asp-controller="Person"
                                            asp-action="Edit"
@@ -112,43 +110,73 @@
                 autoWidth: false,
                 ordering: true,
                 searching: true,
-
                 dom: 'Bfrtip',
-
                 buttons: [
-                    {
-                        extend: 'excelHtml5',
-                        text: 'Excel',
-                        className: 'btn btn-success btn-sm'
-                    },
-                    {
-                        extend: 'pdfHtml5',
-                        text: 'PDF',
-                        className: 'btn btn-danger btn-sm'
-                    },
-                    {
-                        extend: 'print',
-                        text: 'Print',
-                        className: 'btn btn-primary btn-sm'
-                    },
-                    {
-                        extend: 'colvis',
-                        text: 'Columns',
-                        className: 'btn btn-secondary btn-sm'
-                    }
-                ],
-
-                language: {
-                    search: "Search:",
-                    lengthMenu: "Show _MENU_ records",
-                    paginate: {
-                        previous: "←",
-                        next: "→"
-                    }
-                }
+                    { extend: 'excelHtml5', text: 'Excel', className: 'btn btn-success btn-sm' },
+                    { extend: 'pdfHtml5', text: 'PDF', className: 'btn btn-danger btn-sm' },
+                    { extend: 'print', text: 'Print', className: 'btn btn-primary btn-sm' },
+                    { extend: 'colvis', text: 'Columns', className: 'btn btn-secondary btn-sm' }
+                ]
             });
 
         });
     </script>
+
+    <script>
+        $(document).ready(function () {
+
+            $('.delete-btn').click(function () {
+
+                var id = $(this).data('id');
+
+                Swal.fire({
+                    title: "Are you sure?",
+                    text: "This record will be moved to trash!",
+                    icon: "warning",
+                    showCancelButton: true,
+                    confirmButtonColor: "#d33",
+                    cancelButtonColor: "#6c757d",
+                    confirmButtonText: "Yes, delete it!",
+                    cancelButtonText: "Cancel"
+                }).then((result) => {
+
+                    if (result.isConfirmed) {
+                        $('#deleteId').val(id);
+                        $('#deleteForm').submit();
+                    }
+
+                });
+
+            });
+
+        });
+    </script>
+
+    @if (TempData["Success"] != null && TempData["UndoId"] != null)
+    {
+        <script>
+            Swal.fire({
+                icon: 'success',
+                title: 'Deleted!',
+                text: '@TempData["Success"]',
+                showCancelButton: true,
+                confirmButtonText: 'Undo',
+                cancelButtonText: 'Close',
+                timer: 5000
+            }).then((result) => {
+
+                if (result.isConfirmed) {
+
+                    $.post('/Person/UndoDelete', { id: '@TempData["UndoId"]' })
+                        .done(function () {
+                            Swal.fire('Restored!', 'Person restored successfully.', 'success')
+                                .then(() => location.reload());
+                        });
+
+                }
+
+            });
+        </script>
+    }
 
 }

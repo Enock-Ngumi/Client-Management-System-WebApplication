@@ -88,5 +88,6 @@ namespace Client_Management_System.Models
 
             return value;
         }
+        public bool IsDeleted { get; set; } = false;
     }
 }
